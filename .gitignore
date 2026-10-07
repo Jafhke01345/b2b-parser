@@ -1,6 +1,40 @@
+# ==============================================================================
+# B2B-PARSER REPOSITORY FILTER MATRIX (.gitignore)
+# ==============================================================================
+
+# 🔒 Secrets, Vaults, and Credentials (CRITICAL)
 .env
 .env.local
+.env.production.local
+.env.development.local
 .env.*.local
-pyc
+*.pem
+*.key
+*.pat
+
+# 🐍 Python Subsystem & Compiled Caches
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 📦 Node / Frontend Subsystem Assets
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+*.tsbuildinfo
+
+# 🗄️ Active Databases and Storage Layers
 *.db
+*.sqlite3
+backend/data/
+alerts.db
+
+# 🐋 Docker Ingress & Cache Footprints
+.docker/
+*.log
