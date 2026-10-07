@@ -24,7 +24,7 @@ jobs:
       - name: Run Backend Tests
         run: |
           cd backend
-          pytest test_main.py
+          pytest test_compliance_engine.py
 
   build-and-publish:
     needs: test-and-validate
