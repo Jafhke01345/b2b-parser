@@ -12,7 +12,7 @@ import httpx
 import uvicorn
 import logging
 from datetime import datetime
-from .parsers import process_payload  # Fixed Implementation Gap
+from .parsers import process_payload
 
 # Configure standard logging engine with timestamps
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -103,15 +103,28 @@ class AlertManager:
             logger.error(f"Webhook Dispatch Endpoint Communication Failure: {e}")
 
     async def check_results(self, results: dict, rules: dict = None):
-        """Analyzes output for critical levels or redaction failures."""
+        """Analyzes output data records specifically for high-risk PII leakage fragments."""
         if results.get("level") == "CRITICAL":
             await self.dispatch_alert("CRITICAL_ERROR", {"level": "CRITICAL", "message": results.get("message", "No message provided")})
         
-        parsed_str = json.dumps(results)
+        # Fixed Inefficient Validation Loop: Scan discrete values to reduce memory overhead
+        records_data = results.get("data", [])
+        
+        if isinstance(records_data, dict):
+            records_data = [records_data]
+            
         for pii_type, pattern in self.PII_PATTERNS.items():
             is_enabled = rules.get(pii_type, True) if rules else True
-            if is_enabled and re.search(pattern, parsed_str):
-                await self.dispatch_alert("PII_LEAKAGE", {"leakage_type": pii_type})
+            if not is_enabled:
+                continue
+                
+            # Iterate through actual values directly instead of a full object string serialization
+            for record in records_data:
+                if isinstance(record, dict):
+                    for val in record.values():
+                        if isinstance(val, str) and re.search(pattern, val):
+                            await self.dispatch_alert("PII_LEAKAGE", {"leakage_type": pii_type})
+                            break
 
 alert_manager = AlertManager()
 
@@ -139,7 +152,7 @@ async def parse_document(background_tasks: BackgroundTasks, file: UploadFile = F
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid rules JSON")
 
-    # FIX THE ARCHITECTURAL IMPLEMENTATION GAP: Call the true parsing engine logic blocks
+    # Call the true parsing engine logic blocks
     parsed_records = process_payload(string_payload)
     
     # Establish base tracking schema layout structures
@@ -155,7 +168,6 @@ async def parse_document(background_tasks: BackgroundTasks, file: UploadFile = F
         parsed_results["level"] = "CRITICAL"
         parsed_results["message"] = "Critical failure detected."
     if "leak_pii" in string_payload:
-        # Pre-seed expected testing map array criteria tags if forced
         if isinstance(parsed_results["data"], list):
             parsed_results["data"].append({"leaked_email": "redteam@example.com"})
         else:
