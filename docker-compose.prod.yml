@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: xcsoftware/b2b-parser-frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+
+  backend:
+    image: xcsoftware/b2b-parser-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - B2B_PARSER_DB_PATH=/app/data/prod.db
+      - B2B_PARSER_SIGNING_SECRET=${B2B_PARSER_SIGNING_SECRET}
+      - ALERT_WEBHOOK_URL=${ALERT_WEBHOOK_URL}
+    volumes:
+      - backend_data:/app/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "python", "obfuscate.py"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  backend_data:
