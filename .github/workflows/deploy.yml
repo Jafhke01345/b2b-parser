@@ -23,8 +23,8 @@ jobs:
 
       - name: Run Backend Tests
         run: |
-          cd backend
-          pytest test_compliance_engine.py
+          export PYTHONPATH=$GITHUB_WORKSPACE
+          pytest backend/test_compliance_engine.py
 
   build-and-publish:
     needs: test-and-validate
